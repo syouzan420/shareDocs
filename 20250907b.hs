@@ -31,7 +31,8 @@ checkNei :: Pos -> Pos -> [String] -> Bool
 checkNei hw ps strs =
   let nei = neighbour hw ps
       bls = map (\pos -> pairToBool pos strs) nei
-   in and bls 
+      count = length $ filter id bls
+   in count==2 || count==4 
 
 check :: Pos -> Pos -> [String] -> Bool
 check (h,w) pos strs =
