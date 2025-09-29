@@ -67,10 +67,11 @@ Main.hs
 import Control.Monad.IO.Class (MonadIO,liftIO)
 
 showTouch :: MonadIO m => [Touch] -> m () 
+showTouch [] = return ()
 showTouch (Touch idn tar pag cli scr:xs) = do
   let s = "idintifier:" ++ show idn ++ " target:" ++ " " ++ 
-          " pageCoords:" ++ show pag ++ "clientCoords:" ++ show cli ++ 
-          "screenCoords:" ++ show scr
+          " pageCoords:" ++ show pag ++ " clientCoords:" ++ show cli ++ 
+          " screenCoords:" ++ show scr
   liftIO $ putStrLn s  
   showTouch xs
 
@@ -104,3 +105,10 @@ ShooPin (シューピン) はどうか？
 gitリポジトリ spをつくった
 ゲーム名は 今のところ ShooPing (シューピン) としておく
 シューティングが shooting なので ちょっとシャレていておもしろいかも知れない
+
+[13:12]
+タブレットの方でテストしてみた
+gitリポジトリに Images や Audio を入れてゐなかったりしてうまく起動しなかった
+Main.js css などもリポジトリに含め ブラウザで動作できるやうにした
+エラーが出たのでコードを確認し改善した
+
