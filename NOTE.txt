@@ -46,3 +46,61 @@ CPU もしくは 對人戰
 [20:44]
 
 画面のタッチからヲシテ文字を検出する
+
+9/29 [11:52]
+
+Main.hs
+  onEvent ce TouchStart $ \(TouchData {}) -> do
+    readIORef state >>= tcStart >>= writeIORef state
+  onEvent ce TouchEnd $ \(TouchData {}) -> do
+    readIORef state >>= touchIsTrue >>= writeIORef state
+
+>>>
+
+  onEvent ce TouchStart $ \(TouchData a b c) -> do
+    mapM_ showTouch [a,b,c] 
+    readIORef state >>= tcStart >>= writeIORef state
+  onEvent ce TouchEnd $ \(TouchData a b c) -> do
+    readIORef state >>= touchIsTrue >>= writeIORef state
+
++++
+import Control.Monad.IO.Class (MonadIO,liftIO)
+
+showTouch :: MonadIO m => [Touch] -> m () 
+showTouch (Touch idn tar pag cli scr:xs) = do
+  let s = "idintifier:" ++ show idn ++ " target:" ++ " " ++ 
+          " pageCoords:" ++ show pag ++ "clientCoords:" ++ show cli ++ 
+          "screenCoords:" ++ show scr
+  liftIO $ putStrLn s  
+  showTouch xs
+
+このやうにして タッチ機能を検証していかうと思ふ
+どのやうにタッチしたら どんな數値が出てくるのか確認した上で
+文字認識のコードを考えるためだ
+
+ディスクトップでは検証できない(マウスでクリックしてもタッチとはみなされない)
+
+タブレットでテストすることにする
+
+githubに新らしいリポジトリをつくらうと思ふ
+名前はどうしやう
+
+ここのフォルダ名は yuto にしてゐるが
+一應ゲームをどんな風にするか ある程度決まったので ゲームの名前を決めやう
+
+ShooPin (シューピン) はどうか？
+
+画面をシュッシュ ピンピンして戰ふだけの 分かりやすいゲームにしたい 
+物理攻撃的なものは 最も直感的な操作で實現できるやうにし
+術を使ふときには 画面上に文字を描くやうな動作で實現する
+術攻撃は物理攻撃の10倍くらゐの威力を持ち 防御術は物理攻撃をほとんど
+防げるやうにすれば バランス的によいのではないか
+何故かといふと 物理攻撃は直感的に短時間でポコポコできるのに對し 
+術式は画面に文字を描くから 動作に時間がかかる  
+その間に物理攻撃を受けても それ以上の効果が期待できなくては
+面白くないだらう
+
+[12:44]
+gitリポジトリ spをつくった
+ゲーム名は 今のところ ShooPing (シューピン) としておく
+シューティングが shooting なので ちょっとシャレていておもしろいかも知れない
