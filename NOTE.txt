@@ -142,3 +142,40 @@ Eva エヴァ イヴ エマ
 なんとなくキーボードは男性的な感じがするから 男っぽい名前にした
 「ミク」と「マックン」 「イオナ」と「マックン」 「フウコ」と「クロ」の組み合はせだ
 
+10/1 [9:57]
+
+Main.hs に次の函數を追加
+
+getCoords :: [Touch] -> [(Int,Int)]
+getCoords = map (\(Touch _ _ _ cli _) -> cli)
+
+addCoords :: [Touch] -> State -> State
+addCoords tcs st = st{tccs=tccs st++[getCoords tcs]}
+
+delCoords :: State -> State
+delCoords st = st{tccs=[]}
+
+showCoords :: MonadIO m => State -> m State
+showCoords st = liftIO $ print (tccs st) >> return st
+
+showTouch2 :: MonadIO m => [Touch] -> m ()
+showTouch2 tcs = liftIO $ print (getCoords tcs)
+
+次の函數を變更
+
+  onEvent ce TouchStart $ \(TouchData a _ _) -> do
+    showTouch2 a 
+    readIORef state >>= tcStart >>= writeIORef state . delCoords
+  onEvent ce TouchMove $ \ (TouchData a _ _) -> do
+    showTouch2 a
+    readIORef state >>= writeIORef state . addCoords a
+  onEvent ce TouchEnd $ \(TouchData {}) -> do
+    readIORef state >>= showCoords >>= touchIsTrue >>= writeIORef state
+    setTimer (Once 100) $ readIORef state >>= tcEnd >>= writeIORef state
+    return ()
+
+まづ 表示させるものを タッチした場所の座標に限定した
+また タッチし終えたときに それまでタッチした座標の一覧を表示する
+おそらく文字認識は このデータと時間データによって決定できると思ふ
+これからイオナでテストしてみる
+
