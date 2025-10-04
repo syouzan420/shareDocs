@@ -1,0 +1,42 @@
+
+Main.hs
+>>>
+
+  onEvent ce TouchStart $ \(TouchData a _ _) -> do
+    showTouch2 a 
+    readIORef state >>= tcStart >>= writeIORef state
+  onEvent ce TouchMove $ \ (TouchData a _ _) -> do
+    showTouch2 a
+    readIORef state >>= writeIORef state . addCoords a
+  onEvent ce TouchEnd $ \(TouchData {}) -> do
+    readIORef state >>= showCoords >>= touchEvent ci >>= touchIsTrue >>= writeIORef state
+
+Action.hs
++++
+
+touchRead :: CInfo -> [[Pos]] -> [Char]
+touchRead ((cW,cH),_) cds = 
+  let cH2 = cH/2 
+      cH4 = cH/4
+      cH8 = cH/8
+      tcds = transpose cds
+      xys = map unzip tcds
+      (maxXs,minXs) = (map (maximum.fst) xys,map (minimum.fst)  xys)
+      (maxYs,minYs) = (map (maximum.snd) xys,map (minimum.snd) xys)
+      dxs = zipWith (\maxX minX -> fromIntegral $ maxX - minX) maxXs minXs
+      dys = zipWith (\maxY minY -> fromIntegral $ maxY - minY) maxYs minYs
+      chs = zipWith toch dxs dys
+      toch dx dy
+       | dx<20 && dy>cH8 && dy<cH2 = '|'
+       | otherwise = '?'
+   in chs
+
+Loop.hs
++++
+
+touchEvent :: CInfo -> State -> IO State
+touchEvent ci st = do
+  let tcs = tccs st  
+  if null tcs then return st else  print (touchRead ci tcs) >> return (st{tccs=[]})
+
+

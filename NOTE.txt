@@ -248,4 +248,79 @@ minimum と maximum の差が ある一定の範囲にあれば 縦線とみな�
 
 横線も同じ理屈で導きだせさうだ
 
+10/4 [10:18]
+
+縦線を認識するやうにコードを實装
+
+Main.hs
+>>>
+
+  onEvent ce TouchStart $ \(TouchData a _ _) -> do
+    showTouch2 a 
+    readIORef state >>= tcStart >>= writeIORef state
+  onEvent ce TouchMove $ \ (TouchData a _ _) -> do
+    showTouch2 a
+    readIORef state >>= writeIORef state . addCoords a
+  onEvent ce TouchEnd $ \(TouchData {}) -> do
+    readIORef state >>= showCoords >>= touchEvent ci >>= touchIsTrue >>= writeIORef state
+
+Action.hs
++++
+
+touchRead :: CInfo -> [[Pos]] -> [Char]
+touchRead ((cW,cH),_) cds = 
+  let cH2 = cH/2 
+      cH4 = cH/4
+      cH8 = cH/8
+      tcds = transpose cds
+      xys = map unzip tcds
+      (maxXs,minXs) = (map (maximum.fst) xys,map (minimum.fst)  xys)
+      (maxYs,minYs) = (map (maximum.snd) xys,map (minimum.snd) xys)
+      dxs = zipWith (\maxX minX -> fromIntegral $ maxX - minX) maxXs minXs
+      dys = zipWith (\maxY minY -> fromIntegral $ maxY - minY) maxYs minYs
+      chs = zipWith toch dxs dys
+      toch dx dy
+       | dx<20 && dy>cH8 && dy<cH2 = '|'
+       | otherwise = '?'
+   in chs
+
+Loop.hs
++++
+
+touchEvent :: CInfo -> State -> IO State
+touchEvent ci st = do
+  let tcs = tccs st  
+  if null tcs then return st else  print (touchRead ci tcs) >> return (st{tccs=[]})
+
+コンパイルが通つたので ミクで確認する
+
+[10:24]
+
+うまく認識してゐるやうだ
+とりあへず 第一関門突破だ
+
+ただ 同時にタップする場合の動作については まだ疑問點がある
+
+完全に同時なら 縦線がふたつ認識されてゐるが
+
+タイミングをずらすと 一つは'?'(認識できない) になる
+まだ實驗が必要だ
+
+新たに氣づいたことは 同じ縦線でも
+上からタップする場合と下からタップする場合がある
+これらは區別した方が 術式のバリエーションが増えるだらう
+
+あと 昨日ゆうとと話して思ひついたこと
+
+どの描画がどの術式に對應するか といふのは ゲームが始まったとき
+ランダムで決まるといふのが面白い筈だ
+
+描画の複雑度に應じて それぞれ術式の集合を對應させるが
+ある難易度の術式の集合であれば その中の どの術式がどの描画と對應するかは
+ランダムに決められる
+
+この實装はまだ先になるだらうが おもしろくなるヴィジョンが廣がつたので
+これを完成させるのに より意欲的になれてゐる氣がする
+
+
 
