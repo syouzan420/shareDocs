@@ -322,5 +322,53 @@ touchEvent ci st = do
 この實装はまだ先になるだらうが おもしろくなるヴィジョンが廣がつたので
 これを完成させるのに より意欲的になれてゐる氣がする
 
+10/6 [12:20]
 
+タッチで描く圖形を可視化したい
+
+OutToCanvas.hs
++++
+import Haste.Graphics.Canvas(Canvas,Color(RGB),Bitmap,Point,color,font,translate
+                            ,rotate,text,draw,scale,render,renderOnTop
+                            ,opacity,lineWidth,stroke,path)
+import Data.List (transpose)
+import Data.Bifunctor (bimap)
+
+drawTouched :: Canvas -> CInfo -> [[Pos]] -> IO ()
+drawTouched c ci cds = do 
+  let tcds = transpose cds
+  let todb = map (bimap fromIntegral fromIntegral)
+  mapM_ (drawPath c ci . todb) tcds
+
+drawPath :: Canvas -> CInfo -> [Point] -> IO ()
+drawPath c _ pos = renderOnTop c $ 
+  opacity 0.5 $ color (chColors!!3) $ lineWidth 10 $ stroke $ path pos 
+
+Loop.hs
+>>>
+
+timerEvent :: Canvas -> CInfo -> Bmps -> State -> IO State
+timerEvent c ci bmps st = do
+  let ticSt = tic st
+      sw = swc st
+      t = if ticSt > 298 then 0 else ticSt+1
+      nst = st{tic=t}
+  drawUpdate c ci bmps nst 
+
+drawUpdate :: Canvas -> CInfo -> Bmps -> State -> IO State 
+drawUpdate c ci bmps st = do
+  let tcs = tccs st
+  drawTouched c ci tcs 
+  return st
+
+[12:27]
+ミクに入れてテストしてみた
+期待以上にしっかり描画できてゐる
+opacity を0.5にしてゐるせいで 描画ごとに同じ圖形が重なる結果
+書き出したところは だんだん濃く表示されるのは 面白い効果だと思ふ
+opacity は 0.2くらゐが適切かもしれない
+あとは タッチを始める時點か タッチを終えた時點で前の描画をクリアすれば
+實際に使用する目的に合致すると思ふ
+すでに今の實装だけで お絵描きアプリになってゐる
+これは Haste の path 函數の實装が優れてゐることによる と考へざるを得ない
 

@@ -1,42 +1,35 @@
-
-Main.hs
->>>
-
-  onEvent ce TouchStart $ \(TouchData a _ _) -> do
-    showTouch2 a 
-    readIORef state >>= tcStart >>= writeIORef state
-  onEvent ce TouchMove $ \ (TouchData a _ _) -> do
-    showTouch2 a
-    readIORef state >>= writeIORef state . addCoords a
-  onEvent ce TouchEnd $ \(TouchData {}) -> do
-    readIORef state >>= showCoords >>= touchEvent ci >>= touchIsTrue >>= writeIORef state
-
-Action.hs
+OutToCanvas.hs
 +++
+import Haste.Graphics.Canvas(Canvas,Color(RGB),Bitmap,Point,color,font,translate
+                            ,rotate,text,draw,scale,render,renderOnTop
+                            ,opacity,lineWidth,stroke,path)
+import Data.List (transpose)
+import Data.Bifunctor (bimap)
 
-touchRead :: CInfo -> [[Pos]] -> [Char]
-touchRead ((cW,cH),_) cds = 
-  let cH2 = cH/2 
-      cH4 = cH/4
-      cH8 = cH/8
-      tcds = transpose cds
-      xys = map unzip tcds
-      (maxXs,minXs) = (map (maximum.fst) xys,map (minimum.fst)  xys)
-      (maxYs,minYs) = (map (maximum.snd) xys,map (minimum.snd) xys)
-      dxs = zipWith (\maxX minX -> fromIntegral $ maxX - minX) maxXs minXs
-      dys = zipWith (\maxY minY -> fromIntegral $ maxY - minY) maxYs minYs
-      chs = zipWith toch dxs dys
-      toch dx dy
-       | dx<20 && dy>cH8 && dy<cH2 = '|'
-       | otherwise = '?'
-   in chs
+drawTouched :: Canvas -> CInfo -> [[Pos]] -> IO ()
+drawTouched c ci cds = do 
+  let tcds = transpose cds
+  let todb = map (bimap fromIntegral fromIntegral)
+  mapM_ (drawPath c ci . todb) tcds
+
+drawPath :: Canvas -> CInfo -> [Point] -> IO ()
+drawPath c _ pos = renderOnTop c $ 
+  opacity 0.5 $ color (chColors!!3) $ lineWidth 10 $ stroke $ path pos 
 
 Loop.hs
-+++
+>>>
 
-touchEvent :: CInfo -> State -> IO State
-touchEvent ci st = do
-  let tcs = tccs st  
-  if null tcs then return st else  print (touchRead ci tcs) >> return (st{tccs=[]})
+timerEvent :: Canvas -> CInfo -> Bmps -> State -> IO State
+timerEvent c ci bmps st = do
+  let ticSt = tic st
+      sw = swc st
+      t = if ticSt > 298 then 0 else ticSt+1
+      nst = st{tic=t}
+  drawUpdate c ci bmps nst 
 
+drawUpdate :: Canvas -> CInfo -> Bmps -> State -> IO State 
+drawUpdate c ci bmps st = do
+  let tcs = tccs st
+  drawTouched c ci tcs 
+  return st
 
